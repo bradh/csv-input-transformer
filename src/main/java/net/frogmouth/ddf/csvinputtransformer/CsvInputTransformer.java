@@ -41,13 +41,11 @@ public class CsvInputTransformer implements MultiInputTransformer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvInputTransformer.class);
 
     public CsvInputTransformer(MetacardTypeRegistry mTypeRegistry) {
-        LOGGER.info("constructor");
         this.mTypeRegistry = mTypeRegistry;
     }
 
     @Override
     public List<Metacard> transform(InputStream input) throws IOException, CatalogTransformerException {
-        LOGGER.info("inner transform");
         List<Metacard> metacards = new ArrayList<Metacard>();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(input, "utf8"));
@@ -55,16 +53,21 @@ public class CsvInputTransformer implements MultiInputTransformer {
         builder.strategy(com.googlecode.jcsv.CSVStrategy.UK_DEFAULT);
         builder.entryParser(new com.googlecode.jcsv.reader.internal.DefaultCSVEntryParser());
         com.googlecode.jcsv.reader.CSVReader<String[]> csvParser = builder.build();
-        String[] header = csvParser.readNext();
+        String[] uglyheader = csvParser.readNext();
         int latitudeIndex = -1;
         int longitudeIndex = -1;
         int titleIndex = -1;
+        String[] header = new String[uglyheader.length];
         for (int i = 0; i < header.length; ++i) {
-            String thisHeaderItem = header[i].trim();
-            if ((thisHeaderItem.equalsIgnoreCase("lat")) || (thisHeaderItem.equalsIgnoreCase("latitude"))) {
+            String thisHeaderItem = uglyheader[i].trim();
+            header[i] = thisHeaderItem;
+            if (thisHeaderItem.equalsIgnoreCase("lat") || thisHeaderItem.equalsIgnoreCase("latitude")) {
                 latitudeIndex = i;
-            } else if ((thisHeaderItem.equalsIgnoreCase("lon")) || (thisHeaderItem.equalsIgnoreCase("long")) || (thisHeaderItem.equalsIgnoreCase("longitude"))) {
+            } else if (thisHeaderItem.equalsIgnoreCase("lon") || thisHeaderItem.equalsIgnoreCase("long") || thisHeaderItem.equalsIgnoreCase("longitude")) {
                 longitudeIndex = i;
+            } else if (thisHeaderItem.equalsIgnoreCase("name") || thisHeaderItem.equalsIgnoreCase("title")) {
+                // try to find something that looks like a label
+                titleIndex = i;
             } else if (titleIndex == -1) {
                 // This is intended to pick the first thing that doesn't look like a lat/long attribute
                 titleIndex = i;
@@ -80,17 +83,33 @@ public class CsvInputTransformer implements MultiInputTransformer {
             data = csvParser.readNext();
             if (data != null) {
                 MetacardImpl mc = new MetacardImpl(BasicTypes.BASIC_METACARD);
+                StringBuilder metadataBuilder = new StringBuilder();
+                metadataBuilder.append("<xml>");
+                String latitude = null;
+                String longitude = null;
                 for (int i = 0; i < data.length; ++i) {
                     if (i == titleIndex) {
                         mc.setAttribute(Metacard.TITLE, data[i].trim());
                     }
-                    // TODO: build lat and lon
+                    if (i == latitudeIndex) {
+                         latitude = data[i].trim();
+                    }
+                    if (i == longitudeIndex) {
+                        longitude = data[i].trim();
+                    }
+                    metadataBuilder.append("<").append(header[i]).append(">");
+                    metadataBuilder.append(data[i].trim());
+                    metadataBuilder.append("</").append(header[i]).append(">");
+                }
+                metadataBuilder.append("</xml>");
+                if ((latitude != null) || (longitude != null)) {
+                    mc.setLocation("POINT(" + longitude + " " + latitude + ")");
                 }
                 mc.setAttribute(Metacard.CONTENT_TYPE, MIME_TYPE);
+                mc.setMetadata(metadataBuilder.toString());
                 metacards.add(mc);
             }
         } while (data != null); 
-        LOGGER.info("leaving inner transform");
         if ((metacards == null) || (metacards.size() < 1)) {
             return null;
         } else {
