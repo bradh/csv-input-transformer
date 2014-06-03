@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright (c) Codice Foundation
+ *
+ * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either
+ * version 3 of the License, or any later version. 
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Lesser General Public License for more details. A copy of the GNU Lesser General Public License is distributed along with this program and can be found at
+ * <http://www.gnu.org/licenses/lgpl.html>.
+ *
+ **/
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.frogmouth.ddf</groupId>
+    <artifactId>csv-input-transformer</artifactId>
+    <name>FROGMOUTH :: TRANSFORMER :: INPUT :: CSV</name>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>bundle</packaging>
+    <description>Input transformer for processing csv files</description>
+
+    <properties>
+        <ddf.version>2.3.0</ddf.version>
+        <ddf.catalog.version>2.5.0-SNAPSHOT</ddf.catalog.version>
+        <geotools.version>8.4</geotools.version>
+    </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>codiceReleases</id>
+            <name>Codice Release Repository</name>
+            <url>https://tools.codice.org/artifacts/content/repositories/releases/</url>
+        </repository>
+
+        <snapshotRepository>
+            <uniqueVersion>true</uniqueVersion>
+            <id>codiceSnapshots</id>
+            <name>Codice Snapshot Repository</name>
+            <url>https://tools.codice.org/artifacts/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-main</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ddf.catalog.core</groupId>
+            <artifactId>catalog-core-api</artifactId>
+            <version>${ddf.catalog.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.jcsv</groupId>
+            <artifactId>jcsv</artifactId>
+            <version>1.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-ext</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
+    </dependencies>
+
+  <build>
+    <testSourceDirectory>src/test/java</testSourceDirectory>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <plugins>
+        <!-- The maven-bundle-plugin is required for this artifact to be an OSGi bundle. -->
+        <!-- Add in additional imports that this bundle requires using a comma-sperated list. -->
+        <plugin>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>maven-bundle-plugin</artifactId>
+            <extensions>true</extensions>
+            <version>2.3.5</version>
+            <configuration>
+
+                <instructions>
+                    <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                    <Embed-Dependency>
+                        jcsv
+                    </Embed-Dependency>
+                    <Import-Package>
+                        ddf.catalog.transform,
+                        ddf.catalog.data,
+                        ddf.catalog.data.metacardtype,
+                        org.slf4j,
+                        org.osgi.service.blueprint
+                    </Import-Package>
+                    <Export-Package />
+                </instructions>
+
+            </configuration>
+        </plugin>
+
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-release-plugin</artifactId>
+            <version>2.4.1</version>
+        </plugin>
+
+    </plugins>
+  </build>
+
+</project>
